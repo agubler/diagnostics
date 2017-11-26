@@ -13,7 +13,7 @@ import {
 } from './diagnosticEvents';
 import serializeDNode, { SerializedDNode } from './serializeDNode';
 
-type CurrentNode = { children?: CurrentNode[] } | undefined | null | string;
+type CurrentNode = { children?: CurrentNode[], rendered?: CurrentNode[] } | undefined | null | string;
 
 const VERSION = '0.0.1';
 
@@ -76,11 +76,11 @@ export class DiagnosticAPI {
 		}
 		let current: CurrentNode = { children: [ projectorMap.get(projector)!.lastRender ] };
 		while (segments.length) {
-			if (!current || typeof current === 'string' || !current.children) {
+			if (!current || typeof current === 'string' || (!current.rendered && !current.children)) {
 				throw new Error(`Unresolveable path: "${path}`);
 			}
 			const index = Number(segments.shift());
-			current = current.children[index];
+			current = current.rendered && current.rendered[index] || current.children![index];
 		}
 		return isHNode(current as DNode) && typeof (current as InternalHNode).domNode === 'object' && ((current as InternalHNode).domNode as HTMLElement) || undefined;
 	}
