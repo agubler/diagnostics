@@ -68,6 +68,11 @@ export interface SerializedWNode<W extends WidgetBaseInterface = DefaultWidgetBa
 	properties: SerializedProperties<W['properties']>;
 
 	/**
+	 * The widget as rendered
+	 */
+	rendered: SerializedDNode[];
+
+	/**
 	 * The type of the node
 	 */
 	type: 'wnode';
@@ -153,8 +158,9 @@ function serializeProperties<P>(properties: P): SerializedProperties<P> {
  */
 function serializeWNode(value: InternalWNode): SerializedWNode {
 	const wnode: SerializedWNode = {
-		children: serializeDNodeArray(value.children) as any,
+		children: serializeDNodeArray(value.children),
 		properties: serializeProperties(value.properties),
+		rendered: serializeDNodeArray(value.rendered),
 		coreProperties: serializeProperties(value.coreProperties),
 		type: 'wnode',
 		widgetConstructor: (value.widgetConstructor as any).name || ''
