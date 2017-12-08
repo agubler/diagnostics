@@ -160,10 +160,12 @@ function serializeWNode(value: InternalWNode): SerializedWNode {
 	const wnode: SerializedWNode = {
 		children: serializeDNodeArray(value.children),
 		properties: serializeProperties(value.properties),
-		rendered: serializeDNodeArray(value.rendered),
+		rendered: value.rendered ? serializeDNodeArray(value.rendered) : [],
 		coreProperties: serializeProperties(value.coreProperties),
 		type: 'wnode',
-		widgetConstructor: (value.widgetConstructor as any).name || ''
+		widgetConstructor: typeof value.widgetConstructor === 'string' ?
+			`"${value.widgetConstructor}"` : typeof value.widgetConstructor === 'symbol' ?
+				String(value.widgetConstructor) : (value.widgetConstructor as any).name || ''
 	};
 	return wnode;
 }
