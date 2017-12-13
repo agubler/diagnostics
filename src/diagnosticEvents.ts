@@ -19,11 +19,15 @@ export type DiagnosticEvents =
 	ProjectorNameEvent |
 	ProjectionUpdateEvent;
 
+export type EventData = {
+	[key: string]: string | number | boolean | undefined | null;
+};
+
 export interface EventLogRecord {
 	/**
 	 * Data associated with the event
 	 */
-	data: any;
+	data: EventData;
 
 	/**
 	 * Log level of the event
@@ -132,7 +136,7 @@ function changeNameProjector(evt: ProjectorNameEvent) {
  * @param evt The event
  */
 export function logEvent(evt: DiagnosticEvents) {
-	let data: any;
+	let data: EventData;
 	switch (evt.type) {
 	case 'projector:attach':
 	case 'projector:render':
@@ -153,6 +157,8 @@ export function logEvent(evt: DiagnosticEvents) {
 			name: evt.target.name
 		};
 		break;
+	default:
+		data = {};
 	}
 
 	eventLog.push({

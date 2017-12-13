@@ -36,17 +36,17 @@
   },
   "peerDependencies": {
     "@dojo/core": "~0.2.1",
-    "@dojo/has": "~0.1.0",
-    "@dojo/shim": "~0.2.2",
+    "@dojo/has": "~0.1.1",
+    "@dojo/shim": "~0.2.3",
     "@dojo/widget-core": "~0.3.0"
   },
   "devDependencies": {
     "@dojo/core": "~0.2.1",
-    "@dojo/has": "~0.1.0",
+    "@dojo/has": "~0.1.1",
     "@dojo/i18n": "^0.2.0",
     "@dojo/interfaces": "~0.1.0",
     "@dojo/loader": "~0.1.0",
-    "@dojo/shim": "~0.2.2",
+    "@dojo/shim": "~0.2.3",
     "@dojo/widget-core": "~0.3.0",
     "@dojo/widgets": "~0.2.2",
     "@types/glob": "5.0.*",
