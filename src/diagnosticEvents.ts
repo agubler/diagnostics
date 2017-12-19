@@ -1,23 +1,61 @@
 import Evented from '@dojo/core/Evented';
 import Map from '@dojo/shim/Map';
 import { DNode } from '@dojo/widget-core/interfaces';
-import { ProjectorConstructEvent, ProjectorNameEvent, ProjectionUpdateEvent, DiagnosticMixin } from './DiagnosticProjector';
+import {
+	ProjectorConstructEvent,
+	ProjectorNameEvent,
+	ProjectionUpdateEvent,
+	DiagnosticMixin
+} from './wrappers/Projector';
+import {
+	RouterConstructEvent,
+	RouterDispatchEvent,
+	RouterDispatchRejectEvent,
+	RouterNameEvent
+} from './wrappers/Router';
+import {
+	Store,
+	StoreApplyEvent,
+	StoreConstructEvent,
+	StoreGetEvent,
+	StoreInvalidateEvent,
+	StoreNameEvent
+} from './wrappers/Store';
 import serializeDNode, { SerializedDNode } from './serializeDNode';
+import { serializeObject } from './util';
 
 /**
  * Event types supported by diagnosticEvents
  */
 export type DiagnosticEventTypes =
-	'loaded:DiagnosticProjector' |
-	'projector:attach' |
-	'projector:construct' |
-	'projector:render' |
-	'projector:set:name';
+	| 'loaded:DiagnosticProjector'
+	| 'projector:attach'
+	| 'projector:construct'
+	| 'projector:render'
+	| 'projector:set:name'
+	| 'router:construct'
+	| 'router:dispatch'
+	| 'router:dispatch:reject'
+	| 'router:set:name'
+	| 'store:apply'
+	| 'store:construct'
+	| 'store:get'
+	| 'store:invalidate'
+	| 'store:set:name';
 
 export type DiagnosticEvents =
-	ProjectorConstructEvent |
-	ProjectorNameEvent |
-	ProjectionUpdateEvent;
+	| ProjectorConstructEvent
+	| ProjectorNameEvent
+	| ProjectionUpdateEvent
+	| RouterConstructEvent
+	| RouterDispatchEvent
+	| RouterDispatchRejectEvent
+	| RouterNameEvent
+	| StoreApplyEvent
+	| StoreConstructEvent
+	| StoreGetEvent
+	| StoreInvalidateEvent
+	| StoreNameEvent;
 
 export type EventData = {
 	[key: string]: string | number | boolean | undefined | null;
@@ -62,6 +100,10 @@ export interface ProjectorData {
 	renderLog: RenderLogRecord[];
 }
 
+export interface StoreData {
+	store: Store;
+}
+
 export interface RenderLogRecord {
 	/**
 	 * The amount of time (in milliseconds) it took to perform the `.render()` for the projector
@@ -88,6 +130,8 @@ export interface RenderLogRecord {
  * A map of the currently available diagnostic projector data
  */
 export const projectorMap = new Map<string, ProjectorData>();
+
+export const storeMap = new Map<string, StoreData>();
 
 /**
  * A log of diagnostic events
@@ -117,18 +161,35 @@ function addProjector(evt: ProjectorConstructEvent) {
 	});
 }
 
+function addStore(evt: StoreConstructEvent) {
+	logEvent(evt);
+	storeMap.set(evt.target.name, {
+		store: evt.target
+	});
+}
+
 /**
  * Change the name of a diagnostic projector
  * @param evt The event
  */
 function changeNameProjector(evt: ProjectorNameEvent) {
 	logEvent(evt);
-	if (!(projectorMap.has(evt.previous))) {
-		throw new Error(`Rename of projector "${evt.target}" failed due to missing in diagnostics`);
+	if (!projectorMap.has(evt.previous)) {
+		throw new Error(`Rename of projector "${evt.target.name}" failed due to missing in diagnostics`);
 	}
 	const value = projectorMap.get(evt.previous)!;
 	projectorMap.delete(evt.previous);
 	projectorMap.set(evt.target.name, value);
+}
+
+function changeNameStore(evt: StoreNameEvent) {
+	logEvent(evt);
+	if (!storeMap.has(evt.previous)) {
+		throw new Error(`Rename of store "${evt.target.name}" failed due to missing in diagnostics`);
+	}
+	const value = storeMap.get(evt.previous)!;
+	storeMap.delete(evt.previous);
+	storeMap.set(evt.target.name, value);
 }
 
 /**
@@ -138,27 +199,58 @@ function changeNameProjector(evt: ProjectorNameEvent) {
 export function logEvent(evt: DiagnosticEvents) {
 	let data: EventData;
 	switch (evt.type) {
-	case 'projector:attach':
-	case 'projector:render':
-		data = {
-			name: evt.target.name,
-			innerRender: evt.innerDuration,
-			outerRender: evt.outerDuration
-		};
-		break;
-	case 'projector:construct':
-		data = {
-			name: evt.target.name
-		};
-		break;
-	case 'projector:set:name':
-		data = {
-			previous: evt.previous,
-			name: evt.target.name
-		};
-		break;
-	default:
-		data = {};
+		case 'projector:attach':
+		case 'projector:render':
+			data = {
+				name: evt.target.name,
+				innerRender: evt.innerDuration,
+				outerRender: evt.outerDuration
+			};
+			break;
+		case 'projector:construct':
+		case 'router:construct':
+		case 'store:construct':
+		case 'store:invalidate':
+			data = {
+				name: evt.target.name
+			};
+			break;
+		case 'projector:set:name':
+		case 'router:set:name':
+			data = {
+				previous: evt.previous,
+				name: evt.target.name
+			};
+			break;
+		case 'router:dispatch':
+			data = serializeObject({
+				context: evt.context,
+				path: evt.path,
+				result: evt.result
+			});
+			break;
+		case 'router:dispatch:reject':
+			data = serializeObject({
+				context: evt.context,
+				path: evt.path,
+				reason: evt.reason
+			});
+			break;
+		case 'store:apply':
+			data = serializeObject({
+				invalidate: evt.invalidate,
+				operations: evt.operations,
+				result: evt.result
+			});
+			break;
+		case 'store:get':
+			data = serializeObject({
+				path: evt.path,
+				value: evt.value
+			});
+			break;
+		default:
+			data = {};
 	}
 
 	eventLog.push({
@@ -186,7 +278,7 @@ export function setLogDepth(value: number) {
  */
 function updateRender(evt: ProjectionUpdateEvent) {
 	logEvent(evt);
-	if (!(projectorMap.has(evt.target.name))) {
+	if (!projectorMap.has(evt.target.name)) {
 		throw new Error(`Projector "${evt.target.name}" missing from diagnostics`);
 	}
 	const projectorData = projectorMap.get(evt.target.name)!;
@@ -213,7 +305,15 @@ export const diagnosticEvents = new Evented({
 		'projector:construct': addProjector,
 		'projector:attach': updateRender,
 		'projector:render': updateRender,
-		'projector:set:name': changeNameProjector
+		'projector:set:name': changeNameProjector,
+		'router:construct': logEvent,
+		'router:dispatch': logEvent,
+		'router:dispatch:reject': logEvent,
+		'router:set:name': logEvent,
+		'store:apply': logEvent,
+		'store:construct': addStore,
+		'store:invalidate': logEvent,
+		'store:set:name': changeNameStore
 	} as any
 });
 

@@ -5,7 +5,7 @@ import Button from '@dojo/widgets/button/Button';
 import Calendar from '@dojo/widgets/calendar/Calendar';
 import theme from '@dojo/widgets/themes/dojo/theme';
 import WidgetBase from '@dojo/widget-core/WidgetBase';
-import Projector from '../DiagnosticProjector';
+import Projector from '../wrappers/Projector';
 
 // import for side effects
 import '../main';
@@ -20,14 +20,22 @@ class App extends WidgetBase {
 
 	render() {
 		return v('div', {}, [
-			w(Button, {
-				key: 'foo',
-				onClick: this._onClick
-			}, [ 'Click me!' ]),
-			v('button', {
-				key: 1,
-				onclick: this._onclick
-			}, [ 'Click me!' ]),
+			w(
+				Button,
+				{
+					key: 'foo',
+					onClick: this._onClick
+				},
+				['Click me!']
+			),
+			v(
+				'button',
+				{
+					key: 1,
+					onclick: this._onclick
+				},
+				['Click me!']
+			),
 			v('div', {}, [
 				w(Calendar, {
 					key: 'calendar',

@@ -6,7 +6,7 @@ import SourceProjectorMixin from '@dojo/widget-core/mixins/Projector';
 export * from '@dojo/widget-core/mixins/Projector';
 
 import { Constructor, WidgetProperties } from '@dojo/widget-core/interfaces';
-import diagnosticEvents from './diagnosticEvents';
+import diagnosticEvents from '../diagnosticEvents';
 
 export interface DiagnosticMixin extends SourceProjectorMixin<WidgetProperties> {
 	name: string;
@@ -68,7 +68,9 @@ let projectorUID = 0;
 
 diagnosticEvents.emit({ type: 'loaded:DiagnosticProjector' });
 
-export function DiagnosticMixin<P extends Constructor<SourceProjectorMixin<WidgetProperties>>>(Base: P): P & Constructor<DiagnosticMixin> {
+export function DiagnosticMixin<P extends Constructor<SourceProjectorMixin<WidgetProperties>>>(
+	Base: P
+): P & Constructor<DiagnosticMixin> {
 	class Projector extends Base {
 		private _diagnosticName: string;
 		private _diagnosticRender: DNode;
@@ -88,7 +90,7 @@ export function DiagnosticMixin<P extends Constructor<SourceProjectorMixin<Widge
 			} as ProjectorNameEvent);
 		}
 
-		constructor (...args: any[]) {
+		constructor(...args: any[]) {
 			super(...args);
 
 			this._diagnosticName = `projector_${++projectorUID}`;
@@ -98,8 +100,8 @@ export function DiagnosticMixin<P extends Constructor<SourceProjectorMixin<Widge
 			} as ProjectorConstructEvent);
 			around(this, '_boundRender', (previous) => {
 				return () => {
-					const start = this._diagnosticStart = performance.now();
-					const result = this._diagnosticRender = previous();
+					const start = (this._diagnosticStart = performance.now());
+					const result = (this._diagnosticRender = previous());
 					this._diagnosticRenderDuration = performance.now() - start;
 					return result;
 				};
@@ -130,7 +132,9 @@ export function DiagnosticMixin<P extends Constructor<SourceProjectorMixin<Widge
 	return Projector;
 }
 
-export function ProjectorMixin<P, T extends Constructor<WidgetBase<P>>>(Base: T): T & Constructor<SourceProjectorMixin<{}>> & Constructor<DiagnosticMixin> {
+export function ProjectorMixin<P, T extends Constructor<WidgetBase<P>>>(
+	Base: T
+): T & Constructor<SourceProjectorMixin<{}>> & Constructor<DiagnosticMixin> {
 	return DiagnosticMixin(SourceProjectorMixin(Base));
 }
 

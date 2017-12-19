@@ -9,11 +9,12 @@ import {
 	EventLogRecord,
 	projectorMap,
 	RenderLogRecord,
-	setLogDepth
+	setLogDepth,
+	storeMap
 } from './diagnosticEvents';
 import serializeDNode, { SerializedDNode } from './serializeDNode';
 
-type CurrentNode = { children?: CurrentNode[], rendered?: CurrentNode[] } | undefined | null | string;
+type CurrentNode = { children?: CurrentNode[]; rendered?: CurrentNode[] } | undefined | null | string;
 
 const VERSION = '0.0.1';
 
@@ -67,22 +68,27 @@ export class DiagnosticAPI {
 	 * @param path The path to the HNode to retrieve the DOM Node for
 	 */
 	public getDomNode(projector: string, path: string): HTMLElement | undefined {
-		if (!(projectorMap.has(projector))) {
+		if (!projectorMap.has(projector)) {
 			throw new Error(`Projector "${projector}" missing from diagnostics`);
 		}
 		const segments = path.split('/');
 		if (segments.shift()) {
 			throw new Error(`Unexpected first segment to path: "${path}"`);
 		}
-		let current: CurrentNode = { children: [ projectorMap.get(projector)!.lastRender ] };
+		let current: CurrentNode = { children: [projectorMap.get(projector)!.lastRender] };
 		while (segments.length) {
 			if (!current || typeof current === 'string' || (!current.rendered && !current.children)) {
 				throw new Error(`Unresolveable path: "${path}`);
 			}
 			const index = Number(segments.shift());
-			current = current.rendered && current.rendered[index] || current.children![index];
+			current = (current.rendered && current.rendered[index]) || current.children![index];
 		}
-		return isHNode(current as DNode) && typeof (current as InternalHNode).domNode === 'object' && ((current as InternalHNode).domNode as HTMLElement) || undefined;
+		return (
+			(isHNode(current as DNode) &&
+				typeof (current as InternalHNode).domNode === 'object' &&
+				((current as InternalHNode).domNode as HTMLElement)) ||
+			undefined
+		);
 	}
 
 	/**
@@ -90,7 +96,7 @@ export class DiagnosticAPI {
 	 * @param projector The name of the projector
 	 */
 	public getProjectorLastRender(projector: string): SerializedDNode {
-		if (!(projectorMap.has(projector))) {
+		if (!projectorMap.has(projector)) {
 			throw new Error(`Projector "${projector}" missing from diagnostics`);
 		}
 		return serializeDNode(projectorMap.get(projector)!.lastRender);
@@ -101,17 +107,35 @@ export class DiagnosticAPI {
 	 * @param projector The name of the projector
 	 */
 	public getProjectorRenderLog(projector: string): RenderLogRecord[] {
-		if (!(projectorMap.has(projector))) {
+		if (!projectorMap.has(projector)) {
 			throw new Error(`Projector "${projector}" missing from diagnostics`);
 		}
 		return projectorMap.get(projector)!.renderLog;
 	}
 
 	/**
-	 * Retrieve the names of the currently available diagnstic projectors.
+	 * Retrieve the names of the currently available diagnostic projectors.
 	 */
 	public getProjectors(): string[] {
 		return arrayFrom(projectorMap.keys());
+	}
+
+	/**
+	 * Retrieve the names of the currently available diagnostic stores.
+	 */
+	public getStores(): string[] {
+		return arrayFrom(storeMap.keys());
+	}
+
+	/**
+	 * Retrieve the current state of the store
+	 * @param store The name of the store
+	 */
+	public getStoreState(store: string): any {
+		if (!storeMap.has(store)) {
+			throw new Error(`Store "${store}" missing from diagnostics`);
+		}
+		return storeMap.get(store)!.store.path('/__diagnostics__').state;
 	}
 
 	/**

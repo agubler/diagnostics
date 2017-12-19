@@ -47,9 +47,7 @@ export interface SerializedHNode {
 /**
  * A type used to map property keys to values that represent what is being serialized
  */
-export type SerializedProperties<T>  = {
-	[P in keyof T]: string | number | boolean | undefined | null;
-};
+export type SerializedProperties<T> = { [P in keyof T]: string | number | boolean | undefined | null };
 
 export interface SerializedWNode<W extends WidgetBaseInterface = DefaultWidgetBaseInterface> {
 	/**
@@ -120,7 +118,7 @@ function serializeHNode(value: InternalHNode): SerializedHNode {
  * @param properties Any set of properties to be serialized
  */
 function serializeProperties<P>(properties: P): SerializedProperties<P> {
-	const serialized: { [K in keyof P]: any; } = {} as any;
+	const serialized: { [K in keyof P]: any } = {} as any;
 	const keys: (keyof P)[] = Object.keys(properties) as any;
 	for (let i = 0; i < keys.length; i++) {
 		const key = keys[i];
@@ -129,24 +127,26 @@ function serializeProperties<P>(properties: P): SerializedProperties<P> {
 		}
 		const value = properties[key];
 		switch (typeof value) {
-		case 'function':
-			serialized[key] = `@@function${(value as any).name ? `(${(value as any).name})` : ''}`;
-			break;
-		case 'object':
-			if (value === null) {
-				serialized[key] = '@@null';
-			}
-			else {
-				try {
-					serialized[key] = JSON.stringify(value);
+			case 'function':
+				serialized[key] = `@@function${(value as any).name ? `(${(value as any).name})` : ''}`;
+				break;
+			case 'object':
+				if (value === null) {
+					serialized[key] = '@@null';
+				} else {
+					try {
+						serialized[key] = JSON.stringify(value);
+					} catch {
+						serialized[key] = `@@object${
+							value.constructor && (value.constructor as any).name
+								? `(${(value.constructor as any).name})`
+								: ''
+						}`;
+					}
 				}
-				catch {
-					serialized[key] = `@@object${value.constructor && (value.constructor as any).name ? `(${(value.constructor as any).name})` : ''}`;
-				}
-			}
-			break;
-		default:
-			serialized[key] = value;
+				break;
+			default:
+				serialized[key] = value;
 		}
 	}
 	return serialized;
@@ -163,9 +163,12 @@ function serializeWNode(value: InternalWNode): SerializedWNode {
 		rendered: value.rendered ? serializeDNodeArray(value.rendered) : [],
 		coreProperties: serializeProperties(value.coreProperties),
 		type: 'wnode',
-		widgetConstructor: typeof value.widgetConstructor === 'string' ?
-			`"${value.widgetConstructor}"` : typeof value.widgetConstructor === 'symbol' ?
-				String(value.widgetConstructor) : (value.widgetConstructor as any).name || ''
+		widgetConstructor:
+			typeof value.widgetConstructor === 'string'
+				? `"${value.widgetConstructor}"`
+				: typeof value.widgetConstructor === 'symbol'
+					? String(value.widgetConstructor)
+					: (value.widgetConstructor as any).name || ''
 	};
 	return wnode;
 }
@@ -175,7 +178,7 @@ function serializeWNode(value: InternalWNode): SerializedWNode {
  * @param value The target `DNode` to convert into a serializable form
  */
 export default function serializeDNode(value: DNode): SerializedDNode {
-	return isWNode(value) ?
-		serializeWNode(value as InternalWNode) : isHNode(value) ?
-			serializeHNode(value as InternalHNode) : value;
+	return isWNode(value)
+		? serializeWNode(value as InternalWNode)
+		: isHNode(value) ? serializeHNode(value as InternalHNode) : value;
 }
