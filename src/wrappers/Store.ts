@@ -8,7 +8,7 @@ import diagnosticEvents from '../diagnosticEvents';
 export * from '@dojo/stores/Store';
 
 export interface StoreApplyEvent extends StoreEventBase {
-	invalidate?: boolean;
+	invalidate: boolean;
 	operations: PatchOperation[];
 	result: PatchOperation[];
 	type: 'store:apply';
@@ -70,14 +70,16 @@ export class Store<T = any> extends SourceStore<T> {
 			} as StoreInvalidateEvent);
 		});
 		after(this, 'apply', (result: PatchOperation[], originalArgs: any) => {
-			const [operations, invalidate] = originalArgs as [PatchOperation[], boolean | undefined];
-			diagnosticEvents.emit({
-				type: 'store:apply',
-				target: this,
-				operations,
-				invalidate,
-				result
-			} as StoreApplyEvent);
+			const [operations, invalidate, skip] = originalArgs as [PatchOperation[], boolean | undefined, boolean];
+			if (!skip) {
+				diagnosticEvents.emit({
+					type: 'store:apply',
+					target: this,
+					operations,
+					invalidate: invalidate || false,
+					result
+				} as StoreApplyEvent);
+			}
 			return result;
 		});
 		after(this, 'get', (value: any, originalArgs: any) => {

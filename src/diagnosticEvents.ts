@@ -1,5 +1,6 @@
 import Evented from '@dojo/core/Evented';
 import Map from '@dojo/shim/Map';
+import { PatchOperation } from '@dojo/stores/state/Patch';
 import { DNode } from '@dojo/widget-core/interfaces';
 import {
 	ProjectorConstructEvent,
@@ -101,6 +102,13 @@ export interface ProjectorData {
 }
 
 export interface StoreData {
+	history: {
+		ops: PatchOperation[];
+		undo: PatchOperation[];
+	}[];
+	redo: {
+		ops: PatchOperation[];
+	}[];
 	store: Store;
 }
 
@@ -161,11 +169,30 @@ function addProjector(evt: ProjectorConstructEvent) {
 	});
 }
 
+/**
+ * Add a diagnostic store
+ * @param evt The event
+ */
 function addStore(evt: StoreConstructEvent) {
 	logEvent(evt);
 	storeMap.set(evt.target.name, {
+		history: [],
+		redo: [],
 		store: evt.target
 	});
+}
+
+/**
+ * Generate a history of store apply events
+ * @param evt The event
+ */
+function applyStore(evt: StoreApplyEvent) {
+	logEvent(evt);
+	storeMap.get(evt.target.name)!.history.push({
+		ops: evt.operations,
+		undo: evt.result
+	});
+	storeMap.get(evt.target.name)!.redo = [];
 }
 
 /**
@@ -310,7 +337,7 @@ export const diagnosticEvents = new Evented({
 		'router:dispatch': logEvent,
 		'router:dispatch:reject': logEvent,
 		'router:set:name': logEvent,
-		'store:apply': logEvent,
+		'store:apply': applyStore,
 		'store:construct': addStore,
 		'store:invalidate': logEvent,
 		'store:set:name': changeNameStore

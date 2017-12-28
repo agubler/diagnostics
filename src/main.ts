@@ -1,5 +1,6 @@
 import { from as arrayFrom } from '@dojo/shim/array';
 import global from '@dojo/shim/global';
+import { PatchOperation } from '@dojo/stores/state/Patch';
 import { isHNode } from '@dojo/widget-core/d';
 import { DNode } from '@dojo/widget-core/interfaces';
 import { InternalHNode } from '@dojo/widget-core/vdom';
@@ -128,6 +129,21 @@ export class DiagnosticAPI {
 	}
 
 	/**
+	 * Provide the lengths of the current store history stack and redo stack
+	 * @param store The string name of the store to return the information for
+	 */
+	public getStoreTransactionLengths(store: string): { history: number; redo: number } {
+		if (!storeMap.has(store)) {
+			throw new Error(`Store "${store}" missing from diagnostics`);
+		}
+		const storeData = storeMap.get(store)!;
+		return {
+			history: storeData.history.length,
+			redo: storeData.redo.length
+		};
+	}
+
+	/**
 	 * Retrieve the current state of the store
 	 * @param store The name of the store
 	 */
@@ -157,6 +173,59 @@ export class DiagnosticAPI {
 		};
 		node.style.outline = this.highlightOutline;
 		node.style.backgroundColor = this.highlightBackgroundColor;
+	}
+
+	/**
+	 * Time travel in the named store, providing an integer of the number of sets of stored operations to apply
+	 * to the store.  A positive integer will travel forward (redo already undone transactions) and a negative
+	 * integer will travel backwards (undo previous applied patches to the store).
+	 * @param storeName The string name of the store that is the target
+	 * @param distance The distances forward (positive integer) or backwards (neagtive integer) to time travel
+	 * @param invalidate Should the store be invalidated when travelling.  Defaults to `true`.
+	 */
+	public storeTravel(storeName: string, distance: number, invalidate = true): PatchOperation[] {
+		if (!storeMap.has(storeName)) {
+			throw new Error(`Store "${storeName}" missing from diagnostics`);
+		}
+		if (!distance) {
+			return [];
+		}
+		const { history, redo, store } = storeMap.get(storeName)!;
+		let result: PatchOperation[] = [];
+		if (distance > 0) {
+			const redoLength = redo.length;
+			if (distance > redoLength) {
+				throw new Error(`Store "${storeName}" cannot travel forward by ${distance}`);
+			}
+			while (distance > 0) {
+				distance--;
+				const { ops } = redo.shift()!;
+				// we have patched apply so that it takes a 3rd argument, skipping the diagnostic event
+				const undo: PatchOperation[] = (store.apply as any)(ops, invalidate, true);
+				result = result.concat(ops);
+				history.push({
+					ops,
+					undo
+				});
+			}
+		} else {
+			distance = Math.abs(distance);
+			const historyLength = history.length;
+			if (distance > historyLength) {
+				throw new Error(`Store "${storeName}" cannot travel backwards by ${distance}`);
+			}
+			while (distance > 0) {
+				distance--;
+				const { ops, undo } = history.pop()!;
+				// we have patched apply so that it takes a 3rd argument, skipping the diagnostic event
+				(store.apply as any)(undo, invalidate, true);
+				result = result.concat(undo);
+				redo.unshift({
+					ops
+				});
+			}
+		}
+		return result;
 	}
 
 	/**
