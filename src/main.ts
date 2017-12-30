@@ -1,6 +1,6 @@
 import { from as arrayFrom } from '@dojo/shim/array';
 import global from '@dojo/shim/global';
-import { PatchOperation } from '@dojo/stores/state/Patch';
+import { OperationType, PatchOperation } from '@dojo/stores/state/Patch';
 import { isHNode } from '@dojo/widget-core/d';
 import { DNode } from '@dojo/widget-core/interfaces';
 import { InternalHNode } from '@dojo/widget-core/vdom';
@@ -216,7 +216,9 @@ export class DiagnosticAPI {
 			}
 			while (distance > 0) {
 				distance--;
-				const { ops, undo } = history.pop()!;
+				let { ops, undo } = history.pop()!;
+				// filtering out test operations
+				undo = undo.filter(({ op }) => op !== OperationType.TEST);
 				// we have patched apply so that it takes a 3rd argument, skipping the diagnostic event
 				(store.apply as any)(undo, invalidate, true);
 				result = result.concat(undo);
