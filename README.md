@@ -14,12 +14,12 @@ The main purpose of this package is to enable a diagnostic by using the included
 application.  These wrappers issue events which then are exposed via the diagnostic API.  The `main` module of this package exports
 the API but also exposes it under a global variable named `__dojo2_diagnostics__`.
 
-The Dojo 2 [devtool](https://github.com/dojo/devtool) provides an user interface to this API.  The API can also be accessed via a
-browsers development console.
+The Dojo 2 [devtool](https://github.com/dojo/devtool) provides a user interface to this API.  The API can also be accessed via a
+browser's development console.
 
-If you want to instrument your application, you would simply want to load the `main` module for its side-effects.  For example, if
-you used `dojo create app` to scaffold your application, you would want to add `@dojo/diagnostics` as a dependency and in your
-`src/main.ts` you would import the main module:
+If you want to instrument your application, you simply load the `main` module for its side-effects.  For example, if
+you used `dojo create app` to scaffold your application, you want to add `@dojo/diagnostics` as a dependency and in your
+`src/main.ts`, you would import the main module:
 
 ```ts
 import '@dojo/diagnostics/main';
@@ -33,11 +33,11 @@ The diagnostic API currently provides the following properties:
 
 |Property|Default|Description|
 |--------|-------|-----------|
-|`eventLog`|_EventLogRecord[]_|An array of diagnostic events|
-|`eventLogDepth`|_100_|The number of events to retain in memory|
-|`highlightOutline`|`1px dashed #006be6`|When highlighting nodes, the outline for the highlighted node|
-|`highlightBackgroundColor`|`rgba(0,107,230,0.1)`|When highlighting nodes, the background f the highlighted node|
-|`version`| |The current version of the API|
+|`eventLog`|_EventLogRecord[]_|An array of diagnostic events.|
+|`eventLogDepth`|_100_|The number of events to retain in memory.|
+|`highlightOutline`|`1px dashed #006be6`|When highlighting nodes, the outline for the highlighted node.|
+|`highlightBackgroundColor`|`rgba(0,107,230,0.1)`|When highlighting nodes, the background of the highlighted node.|
+|`version`| |The current version of the API.|
 
 #### Methods
 
@@ -45,14 +45,14 @@ The diagnostic API currently provides the following methods:
 
 |Method|Arguments|Return|Description|
 |------|---------|------|-----------|
-|`getDomNode`|_projector: string, path: string_|_HTMLElement | undefined_|Returns a reference to an HTML Element described by the virtual DOM node.|
+|`getDomNode`|_projector: string, path: string_|_HTMLElement |Returns a reference to an HTML Element described by the virtual DOM node.|
 |`getProjectorLastRender`|_projector: string_|_SerializedDNode_|A special version of a virtual DOM node that can be easily serialized.|
-|`getProjectorRenderLog`|_projector: string_|_RenderLogRecord[]_|Return a specialized log of renders for the named projector|
-|`getProjectors`| |_string[]_|Get the names of the currently available diagnostic projectors|
-|`getStores`| |_string[]_|Get the names of the currently available diagnostic stores|
-|`getStoreTransactionLengths`|_store: string_|_{ history: number; redo: number}_|Get information about the number of command transactions currently available for a store|
-|`getStoreState`|_store: string_|_any_|Return the current full state of a store|
-|`highlight`|_projector: string, path: string_|_void_|Highlight the identified HTML Element|
+|`getProjectorRenderLog`|_projector: string_|_RenderLogRecord[]_|Return a specialized log of renders for the named projector.|
+|`getProjectors`| |_string[]_|Get the names of the currently available diagnostic projectors.|
+|`getStores`| |_string[]_|Get the names of the currently available diagnostic stores.|
+|`getStoreTransactionLengths`|_store: string_|_{ history: number; redo: number}_|Get information about the number of command transactions currently available for a store.|
+|`getStoreState`|_store: string_|_any_|Return the current full state of a store.|
+|`highlight`|_projector: string, path: string_|_void_|Highlight the identified HTML Element.|
 |`storeTravel`|_store: string, distance: number_|_PatchOperation[]_|Time travel the state of the named store.  Negative numbers rollback the history stack, while positive numbers replay the redo stack.|
 |`unhighlight`| |_void_|Unhighlight any currently highlighted DOM node.|
 
